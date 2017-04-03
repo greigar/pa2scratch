@@ -13,7 +13,7 @@ yearly_emissions_baltimore <- NEI %>%
                               summarise(total_emission = sum(Emissions))
 
 with(yearly_emissions_baltimore, {
-        plot(  year, total_emission, pch=19, col="blue", xaxt = "n", ylab = "Total Emissions", xlab = "Year")
+        plot(  year, total_emission, pch=19, col="blue", xaxt = "n", ylab = "Total Emissions for Baltimore", xlab = "Year")
         points(year, total_emission,         col="red",  xaxt = "n", type="l")
     }
 )
@@ -21,7 +21,4 @@ with(yearly_emissions_baltimore, {
 # axis function specifies the labelling etc of the axis
 #   1st argument is position - a value of 1 is bottom
 axis(1, yearly_emissions_baltimore$year, yearly_emissions_baltimore$year)
-
-
-
 
