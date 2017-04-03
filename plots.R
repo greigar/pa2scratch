@@ -93,8 +93,9 @@ ggsave("plot3.png")
 # NEI <- readRDS("summarySCC_PM25.rds")
 # SCC <- readRDS("Source_Classification_Code.rds")
 
-scc_coal     <- SCC[ grep("coal", SCC$EI.Sector, ignore.case = TRUE), 1 ]
-nei_scc_coal <- NEI$SCC %in% scc_coal
+scc_coal     <- SCC %>% filter( grepl("coal", EI.Sector, ignore.case = TRUE) ) %>% select(SCC)
+
+nei_scc_coal <- NEI$SCC %in% scc_coal$SCC
 nei_coal     <- NEI[nei_scc_coal,]
 
 yearly_emissions_coal <- nei_coal %>% group_by(year) %>% summarise(total_emission = sum(Emissions))
@@ -110,7 +111,17 @@ ggsave("plot4.png")
 # NEI <- readRDS("summarySCC_PM25.rds")
 # SCC <- readRDS("Source_Classification_Code.rds")
 
-scc_mobile_vehicles <- SCC[ grep("Mobile.*Vehicles.*", SCC$EI.Sector, ignore.case = TRUE), 1 ]
+scc_vehicle  <- SCC %>% filter( grepl("Mobile.*Vehicles.*", EI.Sector, ignore.case = TRUE) ) %>% select(SCC)
+
+emissions_baltimore <- NEI %>% filter(fips == "24510")
+
+baltimore_nei_scc_vehicle <- emissions_baltimore$SCC %in% scc_vehicle$SCC
+baltimore_nei_vehicle     <- emissions_baltimore[baltimore_nei_scc_vehicle,]
+
+yearly_baltimore_emissions_vehicle <- baltimore_nei_vehicle %>% group_by(year) %>% summarise(total_emission = sum(Emissions))
+
+ggplot(yearly_baltimore_emissions_vehicle, aes(x = year, y = total_emission )) + geom_line()
+ggsave("plot5.png")
 
 
 
@@ -118,4 +129,27 @@ scc_mobile_vehicles <- SCC[ grep("Mobile.*Vehicles.*", SCC$EI.Sector, ignore.cas
 #    sources in Los Angeles County, California (𝚏𝚒𝚙𝚜 == "𝟶𝟼𝟶𝟹𝟽").
 #    Which city has seen greater changes over time in motor vehicle emissions?
 
+
+# NEI <- readRDS("summarySCC_PM25.rds")
+# SCC <- readRDS("Source_Classification_Code.rds")
+
+scc_vehicle <- SCC %>% filter( grepl("Mobile.*Vehicles.*", EI.Sector, ignore.case = TRUE) ) %>% select(SCC)
+
+emissions   <- NEI %>% filter(fips == "24510" | fips == "06037")
+
+#nei_scc_vehicle  <- emissions$SCC %in% scc_vehicle$SCC
+#nei_vehiclez     <- emissions[nei_scc_vehicle,]
+
+cities <- c("24510" = "Baltimore", "06037" = "LA")
+emissions$City <- cities[emissions$fips]
+
+nei_vehicle <- inner_join(emissions, scc_vehicle, by = "SCC" )
+
+yearly_emissions_vehicle <- nei_vehicle %>% group_by(year, City) %>% summarise(total_emissions = sum(Emissions))
+
+ggplot(yearly_emissions_vehicle, aes(x = year, y = total_emissions, colour = City)) +
+  geom_line() +
+  labs(x = "Year", y = expression(Total~PM[2.5]~Emissions))
+
+ggsave("plot6.png")
 
