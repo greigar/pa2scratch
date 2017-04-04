@@ -151,5 +151,21 @@ ggplot(yearly_emissions_vehicle, aes(x = year, y = total_emissions, colour = Cit
   geom_line() +
   labs(x = "Year", y = expression(Total~PM[2.5]~Emissions))
 
-ggsave("plot6.png")
+ggsave("plot6a.png")
 
+ggplot(yearly_emissions_vehicle, aes(x = year, y = total_emissions) ) + facet_grid(.~City) + geom_line()
+ggsave("plot6b.png")
+
+
+yearly_emissions_vehicle %>% filter(City == "Baltimore") -> x
+
+y <- x$total_emissions
+y - lag(y)
+
+y1 <- c( 342.9102,   327.3847 , -500.0939 )
+y2 <- c(  -212.511179 ,  -3.878441 , -42.154922 )
+y3 <- cbind(y1,y2)
+
+y3 <- as.data.frame( cbind(y1,y2) )
+
+ggplot(y3, aes(x = c(2002,2005,2008), y = y1, color = "red") ) + geom_line() + geom_line(aes(y = y2), color = "blue")
