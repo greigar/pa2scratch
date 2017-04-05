@@ -166,28 +166,39 @@ yearly_emissions_vehicle %>% filter(City == "Baltimore") -> baltimore
 yearly_emissions_vehicle %>% filter(City == "LA")        -> la
 
 y <- baltimore$total_emissions
-y - lag(y)
+bm_lag <- na.exclude(y - lag(y))
 
-y1 <- c( 342.9102,   327.3847 , -500.0939 )
-y2 <- c(  -212.511179 ,  -3.878441 , -42.154922 )
+y <- la$total_emissions
+la_lag <- na.exclude(y - lag(y))
 
-y3 <- as.data.frame( cbind(y1,y2) )
+lagged <- as.data.frame( cbind(bm_lag, la_lag) )
 
-ggplot(y3, aes(x = c(2002,2005,2008), y = y1, color = "red") ) + geom_line() + geom_line(aes(y = y2), color = "blue")
+ggplot(lagged, aes(x = c(2002,2005,2008), y = bm_lag, color = "red") ) + geom_line() + geom_line(aes(y = la_lag), color = "blue")
 
-# BOX -> too squished
-ggplot(bav, aes(x = year, y = Emissions)) + geom_boxplot(aes(group=year)) + ylim(0,5)
-
+#
 # BAR
+#
+
 nei_vehicle %>% filter(City == "Baltimore") -> bav
-nei_vehicle %>% filter(City == "LA") -> lav
-ggplot(bav, aes(x = year, y = Emissions)) + geom_bar( stat = "identity" ) + geom_line(aes(mean(Emmissions)))
+nei_vehicle %>% filter(City == "LA")        -> lav
+
 ggplot(lav, aes(x = year, y = Emissions)) + geom_bar( stat = "identity" )
 
 head( ggplot_build(g)$data[[1]] ) # get colors from ggplot, g is the ggplot
 
-ggplot(bav, aes(x = year, y = Emissions, fill = factor(year))) + geom_bar( stat = "identity" )  +
+bav_1999 <- bav %>% filter(year == 1999) %>% select(Emissions) %>% sum
+lav_1999 <- lav %>% filter(year == 1999) %>% select(Emissions) %>% sum
+
+baseline <- data.frame(year_1999 = c(bav_1999,lav_1999), City = c("Baltimore","LA"))
+
+ggplot(nei_vehicle, aes(x = year, y = Emissions, fill = factor(year))) +
+  geom_bar( stat = "identity" )  +
   scale_fill_brewer(palette = "Set1") +
-  geom_hline(yintercept=bav_1999, color = "#E41A1C") # first colour from Set1
+  labs(x = "Year", y = "Emissions") +
+  guides(fill = guide_legend(title = "Year")) +
+  facet_grid(.~City) +
+  geom_hline(data = baseline, aes(yintercept = year_1999), color = "#E41A1C") + # first colour from Set1
+  scale_x_discrete( limits = c(1999,2002,2005,2008) )
+    # geom_text(data = c('a','b','c','d'))
 
 
