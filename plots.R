@@ -6,24 +6,27 @@
 library(dplyr)
 
 ## This first line will likely take a few seconds. Be patient!
-NEI <- readRDS("summarySCC_PM25.rds")
-SCC <- readRDS("Source_Classification_Code.rds")
+#NEI <- readRDS("summarySCC_PM25.rds")
+#SCC <- readRDS("Source_Classification_Code.rds")
 
 
-yearly_emissions <- NEI %>% group_by(year) %>% summarise(total_emission = sum(Emissions))
+yearly_emissions <- NEI %>% group_by(year) %>% summarise(total_emissions = sum(Emissions))
 
 
 png(filename="plot1.png", width = 480, height = 480)
 
 with(yearly_emissions, {
-        plot(  year, total_emission, pch=19, col="blue", xaxt = "n", ylab = "Total Emissions", xlab = "Year")
-        points(year, total_emission,         col="red",  xaxt = "n", type="l")
+
+        plot(  year, total_emissions, pch=19, col="blue", xaxt = "n", ylab = expression(PM[2.5]~"Emissions (tons)"), xlab = "Year")
+        points(year, total_emissions,         col="red",  xaxt = "n", type="l")
+
+        # axis function specifies the labelling etc of the axis
+        #   1st argument is position - a value of 1 is bottom
+        axis(1, year, year)
+
+        title(expression("Total"~PM[2.5]~"Emissions From All Sources"))
     }
 )
-
-# axis function specifies the labelling etc of the axis
-#   1st argument is position - a value of 1 is bottom
-axis(1, yearly_emissions$year, yearly_emissions$year)
 
 dev.off()
 
@@ -42,19 +45,22 @@ library(dplyr)
 yearly_emissions_baltimore <- NEI %>%
                               filter(fips == "24510") %>%
                               group_by(year) %>%
-                              summarise(total_emission = sum(Emissions))
+                              summarise(total_emissions = sum(Emissions))
 
 png(filename="plot2.png", width = 480, height = 480)
 
 with(yearly_emissions_baltimore, {
-        plot(  year, total_emission, pch=19, col="blue", xaxt = "n", ylab = "Total Emissions for Baltimore", xlab = "Year")
-        points(year, total_emission,         col="red",  xaxt = "n", type="l")
+
+        plot(  year, total_emissions, pch=19, col="blue", xaxt = "n", ylab = expression(PM[2.5]~"Emissions (tons)"), xlab = "Year")
+        points(year, total_emissions,         col="red",  xaxt = "n", type="l")
+
+        # axis function specifies the labelling etc of the axis
+        #   1st argument is position - a value of 1 is bottom
+        axis(1, year, year)
+
+        title(expression("Total"~PM[2.5]~"Emissions From All Sources for Baltimore"))
     }
 )
-
-# axis function specifies the labelling etc of the axis
-#   1st argument is position - a value of 1 is bottom
-axis(1, yearly_emissions_baltimore$year, yearly_emissions_baltimore$year)
 
 dev.off()
 
@@ -78,9 +84,13 @@ emissions_baltimore <- NEI %>% filter(fips == "24510")
 
 yearly_emissions_baltimore <- emissions_baltimore %>%
                               group_by(year, type) %>%
-                              summarise(total_emission = sum(Emissions))
+                              summarise(total_emissions = sum(Emissions))
 
-ggplot(yearly_emissions_baltimore, aes(x = year, y = total_emission, col = factor(type) )) + geom_line()
+ggplot(yearly_emissions_baltimore, aes(x = year, y = total_emissions, colour = factor(type) )) +
+  geom_line() +
+  labs(x = "Year", y = expression(PM[2.5]~"Emissions (tons)")) +
+  guides(colour = guide_legend(title = "Source Type")) +
+  ggtitle(expression(PM[2.5]~"Emissions for Baltimore by Source Type"))
 
 ggsave("plot3.png")
 
@@ -93,14 +103,20 @@ ggsave("plot3.png")
 # NEI <- readRDS("summarySCC_PM25.rds")
 # SCC <- readRDS("Source_Classification_Code.rds")
 
-scc_coal     <- SCC %>% filter( grepl("coal", EI.Sector, ignore.case = TRUE) ) %>% select(SCC)
+scc_coal <- SCC %>% filter( grepl("coal", EI.Sector, ignore.case = TRUE) ) %>% select(SCC, EI.Sector)
+nei_coal <- inner_join(NEI, scc_coal, by = "SCC")
 
-nei_scc_coal <- NEI$SCC %in% scc_coal$SCC
-nei_coal     <- NEI[nei_scc_coal,]
+yearly_emissions_coal <- nei_coal %>%
+                         group_by(year, EI.Sector) %>%
+                         summarise(total_emissions = sum(Emissions)) %>%
+                         mutate(EI.Sector = sub(" - Coal", "", EI.Sector) ) # remove coal text to make plot titles fit
 
-yearly_emissions_coal <- nei_coal %>% group_by(year) %>% summarise(total_emission = sum(Emissions))
+ggplot(yearly_emissions_coal, aes(x = year, y = total_emissions )) +
+  geom_line() +
+  facet_grid(.~EI.Sector) +
+  labs(x = "Year", y = expression(PM[2.5]~"Emissions (tons)")) +
+  ggtitle(expression(PM[2.5]~"Emissions from Coal "))
 
-ggplot(yearly_emissions_coal, aes(x = year, y = total_emission )) + geom_line()
 ggsave("plot4.png")
 
 
@@ -111,16 +127,21 @@ ggsave("plot4.png")
 # NEI <- readRDS("summarySCC_PM25.rds")
 # SCC <- readRDS("Source_Classification_Code.rds")
 
-scc_vehicle  <- SCC %>% filter( grepl("Mobile.*Vehicles.*", EI.Sector, ignore.case = TRUE) ) %>% select(SCC)
+scc_vehicle           <- SCC %>% filter( grepl("Mobile.*Vehicles.*", EI.Sector, ignore.case = TRUE) )  %>% select(SCC, EI.Sector)
+emissions_baltimore   <- NEI %>% filter(fips == "24510")
+baltimore_nei_vehicle <- inner_join(emissions_baltimore, scc_vehicle, by = "SCC" )
 
-emissions_baltimore <- NEI %>% filter(fips == "24510")
+yearly_baltimore_emissions_vehicle <- baltimore_nei_vehicle %>%
+                                      group_by(year, EI.Sector) %>%
+                                      summarise(total_emissions = sum(Emissions)) %>%
+                                      mutate(EI.Sector = sub("Mobile - On-Road ", "", EI.Sector) ) # make plot titles fit
 
-baltimore_nei_scc_vehicle <- emissions_baltimore$SCC %in% scc_vehicle$SCC
-baltimore_nei_vehicle     <- emissions_baltimore[baltimore_nei_scc_vehicle,]
+ggplot(yearly_baltimore_emissions_vehicle, aes(x = year, y = total_emissions )) +
+  geom_line() +
+  facet_grid(.~EI.Sector) +
+  labs(x = "Year", y = expression(PM[2.5]~"Emissions (tons)")) +
+  ggtitle(expression(PM[2.5]~"Emissions from Motor Vehicles "))
 
-yearly_baltimore_emissions_vehicle <- baltimore_nei_vehicle %>% group_by(year) %>% summarise(total_emission = sum(Emissions))
-
-ggplot(yearly_baltimore_emissions_vehicle, aes(x = year, y = total_emission )) + geom_line()
 ggsave("plot5.png")
 
 
@@ -141,21 +162,20 @@ emissions   <- NEI %>% filter(fips == "24510" | fips == "06037")
 cities <- c("24510" = "Baltimore", "06037" = "LA")
 emissions$City <- cities[emissions$fips]
 nei_vehicle <- inner_join(emissions, scc_vehicle, by = "SCC" )
+yearly_emissions_vehicle <- nei_vehicle %>% group_by(year, City) %>% summarise(total_emissions = sum(Emissions))
+
 
 #
 # LINE
 #
-
-yearly_emissions_vehicle <- nei_vehicle %>% group_by(year, City) %>% summarise(total_emissions = sum(Emissions))
-
 ggplot(yearly_emissions_vehicle, aes(x = year, y = total_emissions, colour = City)) +
   geom_line() +
   labs(x = "Year", y = expression(Total~PM[2.5]~Emissions))
 
-ggsave("plot6a.png")
+ggsave("plot6-line-1.png")
 
 ggplot(yearly_emissions_vehicle, aes(x = year, y = total_emissions) ) + facet_grid(.~City) + geom_line()
-ggsave("plot6b.png")
+ggsave("plot6-line-2.png")
 
 
 #
@@ -174,6 +194,7 @@ la_lag <- na.exclude(y - lag(y))
 lagged <- as.data.frame( cbind(bm_lag, la_lag) )
 
 ggplot(lagged, aes(x = c(2002,2005,2008), y = bm_lag, color = "red") ) + geom_line() + geom_line(aes(y = la_lag), color = "blue")
+ggsave("plot6-lag.png")
 
 #
 # BAR
@@ -183,6 +204,7 @@ nei_vehicle %>% filter(City == "Baltimore") -> bav
 nei_vehicle %>% filter(City == "LA")        -> lav
 
 ggplot(lav, aes(x = year, y = Emissions)) + geom_bar( stat = "identity" )
+ggsave("plot6-bar-1.png")
 
 # head( ggplot_build(g)$data[[1]] ) # get colors from ggplot, g is the ggplot
 
@@ -199,32 +221,34 @@ ggplot(nei_vehicle, aes(x = year, y = Emissions, label = y, fill = factor(year))
   facet_grid(.~City) +
   geom_hline(data = baseline, aes(yintercept = year_1999), color = "#E41A1C") + # first colour from Set1
   scale_x_discrete( limits = c(1999,2002,2005,2008) )
-
-  geom_text(position = position_dodge(0.9))
-    # geom_text(data = c('a','b','c','d'))
+ggsave("plot6-bar-2.png")
 
 # use yearly_emissions
 ggplot(nei_vehicle, aes(x = year, y = Emissions, label = Emissions, fill = factor(year))) +
   geom_bar( stat = "identity" )  +
   geom_text(position = position_dodge(0.9))
+ggsave("plot6-bar-3.png")
 
 
 yearly_emissions_vehicle <- nei_vehicle %>% group_by(City,year) %>% summarise(total_emissions = sum(Emissions))
 
 change_from_1999 <- function(x) { round(x$total_emissions - x[x$year == 1999,]$total_emissions, 2) }
 
-yearly_emissions_vehicle$delta <- c( yearly_emissions_vehicle %>% filter(City == "Baltimore")  %>% change_from_1999,
+yearly_emissions_vehicle$cf1999 <- c( yearly_emissions_vehicle %>% filter(City == "Baltimore")  %>% change_from_1999,
                                      yearly_emissions_vehicle %>% filter(City == "LA")         %>% change_from_1999 )
 
-ggplot(yearly_emissions_vehicle, aes(x = year, y = total_emissions, label = delta, fill = factor(year))) +
+ggplot(yearly_emissions_vehicle, aes(x = year, y = total_emissions, label = cf1999, fill = factor(year))) +
   geom_bar( stat = "identity" )  +
-  geom_text(position = position_dodge(0.9)) +
   scale_fill_brewer(palette = "Set1") +
   labs(x = "Year", y = "Emissions") +
   guides(fill = guide_legend(title = "Year")) +
   facet_grid(.~City) +
   geom_hline(data = baseline, aes(yintercept = year_1999), color = "#E41A1C") + # first colour from Set1
-  scale_x_discrete( limits = c(1999,2002,2005,2008) )
+  scale_x_discrete( limits = c(1999,2002,2005,2008) )  +
+  geom_text(size = 3, vjust = 0,  aes(colour = cf1999 <= 0 ) , nudge_x = -0.1 )  +
+  ggtitle("PM[2.5] Yearly Emissions - Showing change against 1999 Levels")
+
+ggsave("plot6-bar-4.png")
 
 
 

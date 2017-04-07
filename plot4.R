@@ -1,11 +1,22 @@
-1. Have total emissions from PM2.5 decreased in the United States from 1999 to 2008? Using the base plotting system, make a plot showing the total PM2.5 emission from all sources for each of the years 1999, 2002, 2005, and 2008.
+# 4. Across the United States, how have emissions from coal combustion-related sources changed from 1999–2008?
 
-2. Have total emissions from PM2.5 decreased in the Baltimore City, Maryland (𝚏𝚒𝚙𝚜 == "𝟸𝟺𝟻𝟷𝟶") from 1999 to 2008? Use the base plotting system to make a plot answering this question.
+# NEI <- readRDS("summarySCC_PM25.rds")
+# SCC <- readRDS("Source_Classification_Code.rds")
 
-3. Of the four types of sources indicated by the 𝚝𝚢𝚙𝚎 (point, nonpoint, onroad, nonroad) variable, which of these four sources have seen decreases in emissions from 1999–2008 for Baltimore City? Which have seen increases in emissions from 1999–2008? Use the ggplot2 plotting system to make a plot answer this question.
+scc_coal <- SCC %>% filter( grepl("coal", EI.Sector, ignore.case = TRUE) ) %>% select(SCC, EI.Sector)
+nei_coal <- inner_join(NEI, scc_coal, by = "SCC")
 
-4. Across the United States, how have emissions from coal combustion-related sources changed from 1999–2008?
+yearly_emissions_coal <- nei_coal %>%
+                         group_by(year, EI.Sector) %>%
+                         summarise(total_emissions = sum(Emissions)) %>%
+                         mutate(EI.Sector = sub(" - Coal", "", EI.Sector) ) # remove coal text to make plot titles fit
 
-5. How have emissions from motor vehicle sources changed from 1999–2008 in Baltimore City?
+ggplot(yearly_emissions_coal, aes(x = year, y = total_emissions )) +
+  geom_line() +
+  facet_grid(.~EI.Sector) +
+  labs(x = "Year", y = expression(PM[2.5]~"Emissions (tons)")) +
+  ggtitle(expression(PM[2.5]~"Emissions from Coal "))
 
-6. Compare emissions from motor vehicle sources in Baltimore City with emissions from motor vehicle sources in Los Angeles County, California (𝚏𝚒𝚙𝚜 == "𝟶𝟼𝟶𝟹𝟽"). Which city has seen greater changes over time in motor vehicle emissions?
+ggsave("plot4.png")
+
+
