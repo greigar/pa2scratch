@@ -184,14 +184,14 @@ nei_vehicle %>% filter(City == "LA")        -> lav
 
 ggplot(lav, aes(x = year, y = Emissions)) + geom_bar( stat = "identity" )
 
-head( ggplot_build(g)$data[[1]] ) # get colors from ggplot, g is the ggplot
+# head( ggplot_build(g)$data[[1]] ) # get colors from ggplot, g is the ggplot
 
 bav_1999 <- bav %>% filter(year == 1999) %>% select(Emissions) %>% sum
 lav_1999 <- lav %>% filter(year == 1999) %>% select(Emissions) %>% sum
 
 baseline <- data.frame(year_1999 = c(bav_1999,lav_1999), City = c("Baltimore","LA"))
 
-ggplot(nei_vehicle, aes(x = year, y = Emissions, fill = factor(year))) +
+ggplot(nei_vehicle, aes(x = year, y = Emissions, label = y, fill = factor(year))) +
   geom_bar( stat = "identity" )  +
   scale_fill_brewer(palette = "Set1") +
   labs(x = "Year", y = "Emissions") +
@@ -199,6 +199,32 @@ ggplot(nei_vehicle, aes(x = year, y = Emissions, fill = factor(year))) +
   facet_grid(.~City) +
   geom_hline(data = baseline, aes(yintercept = year_1999), color = "#E41A1C") + # first colour from Set1
   scale_x_discrete( limits = c(1999,2002,2005,2008) )
+
+  geom_text(position = position_dodge(0.9))
     # geom_text(data = c('a','b','c','d'))
+
+# use yearly_emissions
+ggplot(nei_vehicle, aes(x = year, y = Emissions, label = Emissions, fill = factor(year))) +
+  geom_bar( stat = "identity" )  +
+  geom_text(position = position_dodge(0.9))
+
+
+yearly_emissions_vehicle <- nei_vehicle %>% group_by(City,year) %>% summarise(total_emissions = sum(Emissions))
+
+change_from_1999 <- function(x) { round(x$total_emissions - x[x$year == 1999,]$total_emissions, 2) }
+
+yearly_emissions_vehicle$delta <- c( yearly_emissions_vehicle %>% filter(City == "Baltimore")  %>% change_from_1999,
+                                     yearly_emissions_vehicle %>% filter(City == "LA")         %>% change_from_1999 )
+
+ggplot(yearly_emissions_vehicle, aes(x = year, y = total_emissions, label = delta, fill = factor(year))) +
+  geom_bar( stat = "identity" )  +
+  geom_text(position = position_dodge(0.9)) +
+  scale_fill_brewer(palette = "Set1") +
+  labs(x = "Year", y = "Emissions") +
+  guides(fill = guide_legend(title = "Year")) +
+  facet_grid(.~City) +
+  geom_hline(data = baseline, aes(yintercept = year_1999), color = "#E41A1C") + # first colour from Set1
+  scale_x_discrete( limits = c(1999,2002,2005,2008) )
+
 
 
