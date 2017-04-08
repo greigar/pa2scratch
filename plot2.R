@@ -5,6 +5,10 @@
 
 library(dplyr)
 
+if ( !all(c("summarySCC_PM25.rds", "Source_Classification_Code.rds") %in% dir()) ){
+  stop("Erorr: missing files summarySCC_PM25.rds and Source_Classification_Code.rds")
+}
+
 ## This first line will likely take a few seconds. Be patient!
 NEI <- readRDS("summarySCC_PM25.rds")
 SCC <- readRDS("Source_Classification_Code.rds")
