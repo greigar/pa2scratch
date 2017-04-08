@@ -42,6 +42,7 @@ change_from_1999 <- function(x) { round(x$total_emissions - x[x$year == 1999,]$t
 # Store the changes from 1999
 yearly_emissions_vehicle$cf1999 <- c(yearly_emissions_vehicle %>% filter(City == "Baltimore") %>% change_from_1999,
                                      yearly_emissions_vehicle %>% filter(City == "LA")        %>% change_from_1999)
+yearly_emissions_vehicle$Decrease_from_1999 <- yearly_emissions_vehicle$cf1999 <= 0
 
 # Extract the 1999 value for plotting horizontal line
 bav_1999 <- (yearly_emissions_vehicle %>% filter(City == "Baltimore" & year == 1999) %>% select(total_emissions))$total_emissions
@@ -52,15 +53,16 @@ baseline <- data.frame(year_1999 = c(bav_1999,lav_1999), City = c("Baltimore","L
 # Creates bar chart with increases/decreases
 #
 ggplot(yearly_emissions_vehicle, aes(x = year, y = total_emissions, label = cf1999, fill = factor(year))) +
-  geom_bar( stat = "identity" )  +
-  scale_fill_brewer(palette = "Set1") +                                            # set bar colors
-  labs(x = "Year", y = expression(PM[2.5]~"Emissions from Motor Vehicles ")) +
-  guides(fill = guide_legend(title = "Year")) +                                    # set legend title
-  facet_grid(.~City) +                                                             # create plot per city
-  geom_hline(data = baseline, aes(yintercept = year_1999), color = "#E41A1C") +    # draw line showing 1999, first colour from Set1
-  scale_x_discrete( limits = c(1999,2002,2005,2008) )  +                           # Set x axis years manually
-  geom_text(size = 3, vjust = 0,  aes(colour = cf1999 <= 0 ) , nudge_x = -0.1 )  + # adjust labels on bars
-  ggtitle("PM[2.5] Yearly Emissions - Showing change against 1999 Levels")
+    geom_bar( stat = "identity" )  +
+    scale_fill_brewer(palette = "Set1") +                                                     # set bar colors
+    labs(x = "Year", y = expression(PM[2.5]~"Emissions from Motor Vehicles (tons)")) +
+    guides(fill = guide_legend(title = "Year")) +                                             # set legend title
+    facet_grid(.~City) +                                                                      # create plot per city
+    geom_hline(data = baseline, aes(yintercept = year_1999), color = "#E41A1C") +             # draw line showing 1999, first colour from Set1
+    scale_x_discrete( limits = c(1999,2002,2005,2008) )  +                                    # Set x axis years manually
+    geom_text(size = 2, vjust = 0, aes(colour = Decrease_from_1999 ), show.legend = FALSE)  + # adjust labels on bars
+    ggtitle(expression(PM[2.5]~"Yearly Vehicle Emissions - Change against 1999 Levels")) +
+    theme(text=element_text(size = 6) ) # small font for png
 
-ggsave("plot6.png")
+ggsave("plot6.png", width=5, height=5)
 

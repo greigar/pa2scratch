@@ -26,10 +26,11 @@ yearly_emissions_baltimore <- emissions_baltimore %>%
                               summarise(total_emissions = sum(Emissions))
 
 ggplot(yearly_emissions_baltimore, aes(x = year, y = total_emissions, colour = factor(type) )) +
-  geom_line() +
-  labs(x = "Year", y = expression(PM[2.5]~"Emissions (tons)")) +
-  guides(colour = guide_legend(title = "Source Type")) +
-  ggtitle(expression(PM[2.5]~"Emissions for Baltimore by Source Type"))
+    geom_line() +
+    labs(x = "Year", y = expression(PM[2.5]~"Emissions (tons)")) +
+    guides(colour = guide_legend(title = "Source Type")) +
+    ggtitle(expression(PM[2.5]~"Emissions for Baltimore by Source Type")) +
+    theme(text=element_text(size = 7) ) # small font for png
 
-ggsave("plot3.png")
+ggsave("plot3.png", width=5, height=5)
 

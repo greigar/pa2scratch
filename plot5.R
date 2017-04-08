@@ -34,10 +34,11 @@ yearly_baltimore_emissions_vehicle <- baltimore_nei_vehicle %>%
 # Plot emssions split by EI.Sector using facet_grid
 #
 ggplot(yearly_baltimore_emissions_vehicle, aes(x = year, y = total_emissions )) +
-  geom_line() +
-  facet_grid(.~EI.Sector) +
-  labs(x = "Year", y = expression(PM[2.5]~"Emissions (tons)")) +
-  ggtitle(expression(PM[2.5]~"Emissions from Motor Vehicles "))
+    geom_line() +
+    facet_grid(.~EI.Sector) +
+    labs(x = "Year", y = expression(PM[2.5]~"Emissions (tons)")) +
+    ggtitle(expression(PM[2.5]~"Emissions from Motor Vehicles ")) +
+    theme(text=element_text(size = 7) ) # small font for png
 
-ggsave("plot5.png")
+ggsave("plot5.png", width=5, height=5)
 

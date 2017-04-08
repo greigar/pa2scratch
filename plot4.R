@@ -35,11 +35,11 @@ yearly_emissions_coal <- nei_coal %>%
 # Plot emssions split by EI.Sector using facet_grid
 #
 ggplot(yearly_emissions_coal, aes(x = year, y = total_emissions )) +
-  geom_line() +
-  facet_grid(.~EI.Sector) +
-  labs(x = "Year", y = expression(PM[2.5]~"Emissions (tons)")) +
-  ggtitle(expression(PM[2.5]~"Emissions from Coal "))
+    geom_line() +
+    facet_grid(.~EI.Sector) +
+    labs(x = "Year", y = expression(PM[2.5]~"Emissions (tons)")) +
+    ggtitle(expression(PM[2.5]~"Emissions from Coal ")) +
+    theme(text=element_text(size = 7) ) # small font for png
 
-ggsave("plot4.png")
-
+ggsave("plot4.png", width=5, height=5)
 
